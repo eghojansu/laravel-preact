@@ -18035,3 +18035,7 @@ textarea.form-control-lg {
 .page-spacer {
   padding-top: 70px;
 }
+
+a[data-logout=true] {
+  color: var(--bs-danger) !important;
+}

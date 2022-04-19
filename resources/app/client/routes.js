@@ -1,10 +1,10 @@
 import Router from 'preact-router'
 import { useEffect } from 'preact/hooks'
 import { createHashHistory } from 'history'
-import { withContext } from './hoc'
+import { withAppContext } from './hoc'
 import Pages from './pages'
 
-export default withContext(({ app: { loading, currentPathSet } }) => {
+export default withAppContext(({ app: { loading, currentPathSet } }) => {
   const history = createHashHistory()
   const handleChange = e => currentPathSet(e.url)
 

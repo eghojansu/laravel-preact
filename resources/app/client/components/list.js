@@ -6,20 +6,20 @@ export const ListNav = ({ currentPath, end, label, class: cls, items = [] }) => 
     {items.map(item => <ListNavItem item={item} end={end} currentPath={currentPath} />)}
   </ul>
 )
-const ListNavItem = ({ currentPath, end, item: { path, label, icon, items = [] } = {} }) => {
+const ListNavItem = ({ currentPath, end, item: { path, label, icon, payload = {}, items = [] } = {} }) => {
   const hasChild = items?.length > 0
   const active = currentPath === path
 
   return (
     <li class={clsx('nav-item', hasChild && 'dropdown')}>
-      <ListNavLink active={active} icon={icon} label={label} path={path} dropdown={hasChild} />
+      <ListNavLink active={active} icon={icon} label={label} path={path} payload={payload} dropdown={hasChild} />
       {hasChild && (
         <ListDropdown currentPath={currentPath} items={items} label={label} end={end} />
       )}
     </li>
   )
 }
-const ListNavLink = ({ active, dropdown, path, label, icon }) => {
+const ListNavLink = ({ active, dropdown, path, label, icon, payload = {} }) => {
   return (
     <a
       href={path}
@@ -27,7 +27,8 @@ const ListNavLink = ({ active, dropdown, path, label, icon }) => {
       aria-current={active ? 'page' : null}
       aria-expanded={dropdown ? 'false' : null}
       role={dropdown ? 'button' : null}
-      data-bs-toggle={dropdown ? 'dropdown' : null}>
+      data-bs-toggle={dropdown ? 'dropdown' : null}
+      {...payload}>
       {icon && <Icon icon={icon} />} {label}
     </a>
   )
