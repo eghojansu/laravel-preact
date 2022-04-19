@@ -2,26 +2,21 @@
 
 namespace App\Services;
 
+use Illuminate\Support\Str;
+use Illuminate\Support\Facades\DB;
+
 class Menu
 {
     public function getMenu(string $group): array
     {
-        $rows = $this->db->select(
-            'MENU',
-            array('GRP = ? AND ACTIVE = 1', $group),
-            array(
-                'columns' => array(
-                    'id' => 'MENUID',
-                    'label' => 'LABEL',
-                    'path' => 'PTH',
-                    'roles' => 'ROLES',
-                    'data' => 'PAYLOAD',
-                    'icon' => 'ICON',
-                    'parent' => 'PARENT',
-                ),
-                'orders' => 'POS',
-            ),
-        );
+        $rows = DB::table('menus')
+            ->where('group', $group)
+            ->where('active', 1)
+            ->orderBy('position')
+            ->get()
+            ->map(static fn ($row) => (array) $row)
+            ->toArray()
+        ;
 
         return self::buildMenu($rows);
     }
@@ -35,37 +30,42 @@ class Menu
             return compact('group', 'pos');
         };
 
-        return Arr::reduce($baseMenu, static fn (array $rows, array $menu, string $id) => array_merge(
+        /** @var array */
+        $flatten = collect($baseMenu)->reduce(static fn (array $rows, array $menu, string $id) => array_merge(
             $rows,
             self::getFlattenMenu($menu, $id, $add),
         ), array());
+
+        return $flatten;
     }
 
     private static function getFlattenMenu(array $menu, string $id, \Closure $add, array $parent = null): array
     {
-        return Arr::reduce(
-            $menu['items'] ?? array(),
+        /** @var array */
+        $flatten = collect($menu['items'] ?? array())->reduce(
             static fn (array $flatten, array $menu, string $id) => array_merge(
                 $flatten,
                 self::getFlattenMenu($menu, $id, $add, $flatten[0]),
             ),
             array(self::getMenuRow($menu + $add(), $id, $parent)),
         );
+
+        return $flatten;
     }
 
     private static function getMenuRow(array $menu, string $id, array $parent = null): array
     {
         return array(
-            'MENUID' => $id,
-            'LABEL' => $menu['label'] ?? Str::caseTitle($id),
-            'PTH' => $menu['path'] ?? '#',
-            'GRP' => $menu['group'] ?? null,
-            'POS' => $menu['pos'] ?? null,
-            'ICON' => $menu['icon'] ?? null,
-            'ROLES' => $menu['roles'] ?? null,
-            'ACTIVE' => 1,
-            'PAYLOAD' => isset($menu['data']) ? json_encode($menu['data']) : null,
-            'PARENT' => $parent['MENUID'] ?? null,
+            'menuid' => $id,
+            'label' => $menu['label'] ?? Str::title($id),
+            'path' => $menu['path'] ?? '#',
+            'group' => $menu['group'] ?? null,
+            'position' => $menu['pos'] ?? null,
+            'icon' => $menu['icon'] ?? null,
+            'active' => 1,
+            'roles' => isset($menu['roles']) ? json_encode($menu['roles']) : null,
+            'payload' => isset($menu['data']) ? json_encode($menu['data']) : null,
+            'parent' => $parent['menuid'] ?? null,
         );
     }
 

@@ -2,7 +2,7 @@
 
 namespace App\Models;
 
-use Illuminate\Contracts\Auth\MustVerifyEmail;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -43,4 +43,19 @@ class User extends Authenticatable
         'email_verified_at' => 'datetime',
         'roles' => 'array',
     ];
+
+    protected function currentRoles(): Attribute
+    {
+        return Attribute::get(
+            fn () => array_unique(array_merge(
+                $this->roles,
+                array('user'),
+            )),
+        );
+    }
+
+    public function allowed(string ...$roles): bool
+    {
+        return !!array_intersect($this->current_roles, $roles);
+    }
 }

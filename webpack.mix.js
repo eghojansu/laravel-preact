@@ -12,19 +12,14 @@ const mix = require('laravel-mix')
  */
 
 mix
-  .js('resources/app/index.js', 'public/js/app.js')
+  .js('resources/app/client/index.js', 'public/js/app.js')
+  .sass('resources/css/main.sass', 'public/css/main.css')
   .webpackConfig({
-    module: {
-      rules: [
-        {
-          test: /\.s[ac]ss$/i,
-          use: [
-            'style-loader',
-            'css-loader',
-            'sass-loader',
-          ],
-        },
-      ],
+    resolve: {
+      'alias': {
+        'react': 'preact/compat',
+        'react-dom': 'preact/compat',
+      },
     },
   })
   .sourceMaps()
