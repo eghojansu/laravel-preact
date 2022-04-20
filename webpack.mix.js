@@ -12,7 +12,8 @@ const mix = require('laravel-mix')
  */
 
 mix
-  .js('resources/app/client/index.js', 'public/js/app.js')
+  .js('resources/app/frontend/index.js', 'public/js/app.js')
+  .js('resources/app/backend/index.js', 'public/js/adm.js')
   .sass('resources/css/main.sass', 'public/css/main.css')
   .webpackConfig({
     resolve: {

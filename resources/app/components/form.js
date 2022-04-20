@@ -201,7 +201,7 @@ export const FormLogin = ({ onLogin = () => null }) => {
 
   return (
     <div class="min-vh-100 d-flex justify-content-center align-items-center">
-      <div style="max-width: 330px" class="text-center">
+      <div style="width: 280px" class="text-center">
         <h1 class="h3 mb-3 fw-normal">Please sign in</h1>
         <FormWrapper
           autocomplete="off"

@@ -16,5 +16,6 @@ use Illuminate\Support\Facades\Route;
 Route::namespace('App\\Http\\Controllers')->group(function () {
     Route::controller('MainController')->group(function() {
         Route::get('/', 'home');
+        Route::get('/adm', 'administration');
     });
 });
