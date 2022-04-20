@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'preact/hooks'
 import Router from 'preact-router'
+import Swal from 'sweetalert2'
 import { withAppContext } from '../hoc'
-import { ListNav } from '../components/list'
+import { ListNav } from '../../components/list'
 import { menus } from '../data'
 import HomePage from './home'
 import LoginPage from './login'
@@ -12,6 +13,7 @@ export default withAppContext(({
   app: {
     app,
     guest,
+    logout,
     allowed,
     currentPath,
   },
@@ -21,10 +23,40 @@ export default withAppContext(({
   const filterMenu = menus => menus.filter(menu => (
     menu.items && menu.items.filter(filterMenu).length > 0
   ) || allowMenu(menu))
+  const doLogout = e => {
+    if ('a' !== e.target.localName || 'true' !== e.target.dataset?.logout) {
+      return
+    }
+
+    e.preventDefault()
+    e.stopPropagation()
+
+    Swal.fire({
+      title: 'Are you sure?',
+      icon: 'warning',
+      showCancelButton: true,
+      allowOutsideClick: false,
+      reverseButtons: true,
+      confirmButtonColor: '#3085d6',
+      cancelButtonColor: '#d33',
+      preConfirm: () => logout(),
+    }).then((result) => {
+      if (result.isConfirmed) {
+        Swal.fire('Logged out', result.value.message, result.value.success ? 'info' : 'error')
+      }
+    })
+  }
 
   useEffect(() => {
     itemsSet(filterMenu(menus))
   }, [guest])
+  useEffect(() => {
+    document.addEventListener('click', doLogout)
+
+    return () => {
+      document.removeEventListener('click', doLogout)
+    }
+  }, [])
 
   return (
     <div class="min-vh-100">

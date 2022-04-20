@@ -3,7 +3,6 @@
 namespace App\Http\Controllers\API;
 
 use App\Models\User;
-use App\Http\Controllers\API\Concerns\API;
 
 class AccountController
 {
@@ -27,5 +26,12 @@ class AccountController
         }
 
         return $this->failed(null, 'Invalid credentials');
+    }
+
+    public function logout()
+    {
+        auth()->guard('web')->logout();
+
+        return $this->json(null, 'You have been logged out');
     }
 }
