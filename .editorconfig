@@ -11,8 +11,11 @@ trim_trailing_whitespace = true
 [*.md]
 trim_trailing_whitespace = false
 
-[*.{babelrc,blade.php,css,js,html,sass,ts,yml,yaml}]
+[*.{blade.php,css,js,json,sass,scss,ts,yml,yaml}]
 indent_size = 2
 
-[docker-compose.yml]
+[.babelrc]
+indent_size = 2
+
+[{docker-compose.yml,composer.json,package.json}]
 indent_size = 4

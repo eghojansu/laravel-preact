@@ -2,18 +2,11 @@
 
 namespace Database\Seeders;
 
-use App\Services\Menu;
-use Illuminate\Database\Seeder;
+use App\Extended\Seeder;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
-use Illuminate\Support\Facades\Hash;
 
 class DatabaseSeeder extends Seeder
 {
-    public function __construct(
-        private Menu $menu,
-    ) {}
-
     /**
      * Seed the application's database.
      *
@@ -21,35 +14,37 @@ class DatabaseSeeder extends Seeder
      */
     public function run()
     {
-        $this->loadUsers();
-        $this->loadMenus();
-        // \App\Models\User::factory(10)->create();
+        $this->seedSources();
+        $this->seedAll();
     }
 
-    private function loadMenus(): void
+    private function seedSources(): void
     {
-        $dir = dirname(__DIR__) . '/seeds/';
-        $ext = '-menu.php';
-        $menus = array(
-            'back',
+        /** @var \PDO */
+        $conn = DB::getPdo();
+        $sources = glob(database_path('imports/*.sql'));
+
+        array_walk(
+            $sources,
+            static fn (string $source) => $conn->exec(file_get_contents($source)),
         );
-        $table = DB::table('menus');
-
-        array_walk($menus, fn (string $menu) => $table->insert($this->menu->flatten(require $dir . $menu . $ext, $menu)));
     }
 
-    private function loadUsers(): void
+    private function seedAll(): void
     {
-        $table = DB::table('users');
-
-        $table->insert(array(
-            array(
-                'userid' => 'su',
-                'name' => 'Administrator',
-                'email' => 'su@root.com',
-                'password' => Hash::make('admin123'),
-                'roles' => '["su","admin"]',
+        $seeds = array_map(
+            static fn (string $file) => 'Database\\Seeders\\' . basename($file, '.php'),
+            array_filter(
+                glob(__DIR__ . DIRECTORY_SEPARATOR . '*Seeder.php'),
+                static fn (string $file) => $file !== __FILE__,
             ),
-        ));
+        );
+
+        usort(
+            $seeds,
+            static fn (string $a, string $b) => $b::getOrder() <=> $a::getOrder(),
+        );
+
+        $this->call($seeds);
     }
 }

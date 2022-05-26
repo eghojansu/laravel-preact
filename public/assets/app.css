@@ -1,0 +1,16 @@
+.form-login {
+  width: 300px;
+}
+
+.wmx-100 {
+  max-width: 100px;
+}
+
+.list-tree-child .list-group .list-group-item {
+  padding-left: 3rem;
+  padding-top: 0.3rem;
+  padding-bottom: 0.3rem;
+}
+.list-tree-child .list-group .list-group-item:last-child {
+  border-bottom-width: 1px;
+}

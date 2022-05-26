@@ -1,6 +1,5 @@
 <?php
 
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -14,13 +13,24 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
-// Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
-//     return $request->user();
-// });
+Route::namespace('App\\Http\\Controllers\\Api')->middleware('visit')->group(function() {
+    Route::controller('MainController')->group(function() {
+        Route::post('login', 'login');
+    });
 
-Route::namespace('App\\Http\\Controllers\\API')->group(function () {
-    Route::controller('AccountController')->group(function() {
-        Route::post('/login', 'login')->middleware('guest');
-        Route::post('/logout', 'logout')->middleware('auth:sanctum');
+    Route::middleware('auth:sanctum')->group(function() {
+        Route::controller('AccountController')->group(function() {
+            Route::get('menu', 'menu');
+            Route::post('logout', 'logout');
+        });
+
+        Route::prefix('adm')->group(function() {
+            Route::controller('UserController')->prefix('user')->group(function() {
+                Route::get('', 'home');
+                Route::post('', 'create');
+                Route::put('{id}', 'update');
+                Route::delete('{id}', 'delete');
+            });
+        });
     });
 });

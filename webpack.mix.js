@@ -1,4 +1,9 @@
+require('dotenv').config()
+
 const mix = require('laravel-mix')
+const url = process.env.APP_URL
+  .replace('${SERVER_HOST}', process.env.SERVER_HOST)
+  .replace('${SERVER_PORT}', process.env.SERVER_PORT)
 
 /*
  |--------------------------------------------------------------------------
@@ -12,16 +17,22 @@ const mix = require('laravel-mix')
  */
 
 mix
-  .js('resources/app/frontend/index.js', 'public/js/app.js')
-  .js('resources/app/backend/index.js', 'public/js/adm.js')
-  .sass('resources/css/main.sass', 'public/css/main.css')
   .webpackConfig({
     resolve: {
-      'alias': {
-        'react': 'preact/compat',
-        'react-dom': 'preact/compat',
+      alias: {
+        "react": "preact/compat",
+        "react-dom/test-utils": "preact/test-utils",
+        "react-dom": "preact/compat",     // Must be below test-utils
+        "react/jsx-runtime": "preact/jsx-runtime",
       },
     },
   })
-  .sourceMaps()
-  .browserSync(process.env.APP_URL)
+  .js('resources/js/shared.js', 'public/assets')
+  .sass('resources/css/shared.sass', 'public/assets')
+  .js('resources/app/index.js', 'public/assets/app.js')
+  .sass('resources/app/styles.sass', 'public/assets/app.css')
+  .sourceMaps(['local', 'dev', 'development'].includes(process.env.APP_ENV))
+  .browserSync({
+    proxy: url,
+    open: false,
+  })

@@ -1,0 +1,13 @@
+# Dev data
+dev: password
+tables:
+  - cspref # system preferences
+  - csmenu # system menu
+  - acrole # system roles
+  - acperm # system permissions
+  - acrolep # roles permissions
+  - usrole # user roles
+  - uspref # user preferences
+  - usact # user activities
+  - ussess # user sessions
+  - usatt # user attempt count

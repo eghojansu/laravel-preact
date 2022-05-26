@@ -1,6 +1,6 @@
 <?php
 
-use App\Database\Blueprint;
+use App\Extended\Blueprint;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Database\Migrations\Migration;
 
@@ -14,8 +14,9 @@ return new class extends Migration
     public function up()
     {
         Schema::create('password_resets', function (Blueprint $table) {
-            $table->auditable('email', null);
+            $table->string('email')->index();
             $table->string('token');
+            $table->timestamp('created_at')->nullable();
         });
     }
 

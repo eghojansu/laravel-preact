@@ -13,9 +13,8 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
-Route::namespace('App\\Http\\Controllers')->group(function () {
-    Route::controller('MainController')->group(function() {
-        Route::get('/', 'home');
-        Route::get('/adm', 'administration');
+Route::namespace('App\\Http\\Controllers')->middleware('visit')->group(function() {
+    Route::controller('UIController')->group(function() {
+        Route::get('', 'home')->name('ui');
     });
 });

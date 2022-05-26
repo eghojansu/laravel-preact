@@ -1,13 +1,7 @@
 {
   "plugins": [
     ["@babel/plugin-transform-react-jsx", {
-      "pragma": "h",
-      "pragmaFrag": "Fragment"
-    }],
-    ["babel-plugin-auto-import", {
-      "declarations": [
-        { "path": "preact", "default": "React", "members": ["h", "Component", "Fragment"] }
-      ]
+      "runtime": "automatic"
     }]
   ]
 }
