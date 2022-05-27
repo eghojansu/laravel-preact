@@ -1,7 +1,7 @@
 <?php
 
 return array(
-    'attempt_next' => 'You can attempt next login at :at',
+    'attempt_next' => 'You may attempt next login at :at',
     'attempt' => ':left attempt left',
     'inactive' => 'Your account has been deactivated',
     'invalid' => 'Invalid credentials',

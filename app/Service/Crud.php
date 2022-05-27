@@ -7,17 +7,19 @@ use Illuminate\Database\Eloquent\Model;
 class Crud
 {
     const DEFAULT_KEY = '***NEW***';
+    const DEFAULT_SIZE = 30;
 
     public function __construct(
         private string $modelClass,
         private string $modelKey,
-        private int $perPage = 30,
+        private int $perPage = self::DEFAULT_SIZE,
+        private \Closure|null $filter = null,
     ) {}
 
     public function load(string $key)
     {
         $model = $this->modelClass;
-        $query = $model::where($this->modelKey, $key)->limit(1);
+        $query = $model::where($this->modelKey, $key)->where($this->getFilter())->limit(1);
 
         return $query->first();
     }
@@ -33,7 +35,7 @@ class Crud
     public function search()
     {
         $model = $this->modelClass;
-        $query = $model::orderBy($this->modelKey);
+        $query = $model::orderBy($this->modelKey)->where($this->getFilter());
 
         return $query->paginate($this->perPage);
     }
@@ -52,12 +54,17 @@ class Crud
             'first' => array(null, 'asc'),
             default => array('=', 'asc'),
         };
-        $query = $model::orderBy($order, $direction)->limit(1);
+        $query = $model::orderBy($order, $direction)->where($this->getFilter())->limit(1);
 
         if ($load && (self::DEFAULT_KEY !== $load) && $operation) {
             $query->where($order, $operation, $load);
         }
 
         return $query->first();
+    }
+
+    private function getFilter(): \Closure
+    {
+        return $this->filter ?? static fn() => null;
     }
 }

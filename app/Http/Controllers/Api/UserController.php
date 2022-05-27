@@ -2,9 +2,10 @@
 
 namespace App\Http\Controllers\Api;
 
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rule;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Builder;
 
 class UserController extends CrudController
 {
@@ -31,13 +32,18 @@ class UserController extends CrudController
                 'string',
                 'min:5',
             ),
+            'active' => 'bail|nullable|boolean',
         ));
         $save = array(
-            'joindt' => now(),
-            'active' => 1,
-            'password' => Hash::make($data['password']),
+            'joindt' => $model?->joindt ?? now(),
+            'password' => $data['password'] ? Hash::make($data['password']) : $model->password,
         );
 
         return $save + $data;
+    }
+
+    protected function getFilter(): \Closure
+    {
+        return fn (Builder $query) => $query->where('userid', '<>', $this->user()->userid);
     }
 }

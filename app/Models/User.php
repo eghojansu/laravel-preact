@@ -3,15 +3,16 @@
 namespace App\Models;
 
 use App\Extended\Model;
-use Illuminate\Auth\Authenticatable as AuthAuthenticatable;
+use Laravel\Sanctum\HasApiTokens;
 use Illuminate\Auth\MustVerifyEmail;
-use Illuminate\Auth\Passwords\CanResetPassword as PasswordsCanResetPassword;
-use Illuminate\Contracts\Auth\Access\Authorizable;
+use Illuminate\Notifications\Notifiable;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Contracts\Auth\CanResetPassword;
+use Illuminate\Contracts\Auth\Access\Authorizable;
+use Illuminate\Auth\Authenticatable as AuthAuthenticatable;
 use Illuminate\Foundation\Auth\Access\Authorizable as AccessAuthorizable;
-use Laravel\Sanctum\HasApiTokens;
-use Illuminate\Notifications\Notifiable;
+use Illuminate\Auth\Passwords\CanResetPassword as PasswordsCanResetPassword;
 
 class User extends Model implements Authenticatable, Authorizable, CanResetPassword
 {
@@ -35,6 +36,7 @@ class User extends Model implements Authenticatable, Authorizable, CanResetPassw
     protected $hidden = array(
         'password',
         'remember_token',
+        'email_verified_at',
     );
     protected $casts = array(
         'email_verified_at' => 'datetime',
@@ -93,5 +95,21 @@ class User extends Model implements Authenticatable, Authorizable, CanResetPassw
     public function activities()
     {
         return $this->hasMany(Usact::class, 'userid', 'userid');
+    }
+
+    public function getActiveAttempt(string $ip, string $agent): Usatt|null
+    {
+        return $this->attempts()->where('active', 1)->where('ip', $ip)->where('agent', $agent)->first();
+    }
+
+    public function newAttempt(int $attleft, string $ip, string $agent): Usatt
+    {
+        $attempt = new Usatt(compact('attleft', 'ip', 'agent') + array(
+            'active' => 1,
+        ));
+
+        $this->attempts()->save($attempt);
+
+        return $attempt;
     }
 }

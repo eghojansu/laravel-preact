@@ -7,10 +7,11 @@ import { filterUnique } from '../lib/filter'
 import { confirm, notify } from '../lib/alert'
 import Toolbar from './toolbar'
 import NavTab, { useTab } from './nav-tab'
+import { random } from '../lib/common'
 
 
 const DEFAULT_KEY = '***NEW***'
-const isRadio = type => [typ.radio, typ.checkbox].includes(type)
+const isCheck = type => [typ.radio, typ.checkbox].includes(type)
 const renderLabel = (field, setup) => 'string' === typeof setup ? setup : (setup && 'label' in setup ? setup?.label : startCase(field))
 const renderData = ({ value, item, setup }) => {
   const { render } = setup || {}
@@ -31,10 +32,15 @@ const FormInputAddon = ({
   textAddon,
   text,
   disabled,
+  title = null,
   iconStart,
   iconEnd,
-  onClick
+  onClick,
+  inputSelector,
+  parentSelector = '.input-group',
+  ...addon
 }) => {
+  const ref = useRef()
   const renderContent = () => (
     <>
       {iconStart && <i class={clsx(`bi-${iconStart}`, text && 'me-2')}></i>}
@@ -42,62 +48,117 @@ const FormInputAddon = ({
       {iconEnd && <i class={clsx(`bi-${iconEnd}`, text && 'ms-2')}></i>}
     </>
   )
-  const handleClick = event => onClick && onClick({
-    event,
-    addon: {
-      id,
+  const handleClick = event => onClick && onClick(event, {
+    id,
+    attr: name => event.target.closest(parentSelector)?.querySelector(inputSelector)?.getAttribute(name),
+    ...addon,
+  })
+
+  useEffect(() => {
+    const tip = new bootstrap.Tooltip(ref.current)
+
+    return () => {
+      tip?.dispose()
     }
   })
 
   if (textAddon) {
     return (
-      <span class="input-group-text" onClick={handleClick} tabindex="-1">
+      <span ref={ref} title={title} class="input-group-text" onClick={handleClick} tabindex="-1">
         {renderContent()}
       </span>
     )
   }
 
   return (
-    <button class={clsx(`btn btn-outline-${btn || 'secondary'}`)} type="button" tabindex="-1" disabled={disabled} onClick={handleClick}>
+    <button ref={ref} title={title} class={clsx(`btn btn-outline-${btn || 'secondary'}`)} type="button" tabindex="-1" disabled={disabled} onClick={handleClick}>
       {renderContent()}
     </button>
   )
 }
 const FormInput = ({
   id,
-  type,
+  type: inputType = 'text',
+  addonStart: inputAddonStart,
+  addonEnd: inputAddonEnd,
+  readonly: inputReadonly,
   label,
   checked,
   class: cls,
   autocomplete = 'off',
-  addonStart,
-  addonEnd,
   disabled,
   success,
   error,
-  onChange,
-  onAction,
-  onKeydown,
-  inputType,
+  plain,
+  raw,
+  search,
+  onChange = () => null,
+  onAction = () => null,
+  onKeydown = () => null,
   ...field
 }) => {
-  const handleChange = event => onChange && onChange({
-    event,
-    input: {
-      type,
-      inputType,
-      ...field,
-    },
-  })
-  const handleKeydown = event => onKeydown && onKeydown({
-    event,
-    input: {
-      type,
-      inputType,
-      ...field,
-    }
-  })
+  const ref = useRef()
+  const isCursor = typ.cursor === inputType
+  const isSearch = typ.search === inputType
+  const isPassword = typ.password === inputType
+  const readonly = inputReadonly || plain ? true : false
   const hasValidation = success || error
+  const withClass = clsx(success && 'is-valid', error && 'is-invalid', cls)
+  const type = isCursor || isSearch || plain || raw ? 'text' : inputType
+  const addonStart = inputAddonStart || (
+    isCursor && [
+      {
+        id: aid.first,
+        iconStart: 'chevron-double-left',
+      },
+      {
+        id: aid.prev,
+        iconStart: 'chevron-left',
+      },
+    ]
+  )
+  const addonEnd = inputAddonStart || (
+    isCursor && [
+      {
+        id: aid.next,
+        iconStart: 'chevron-right',
+      },
+      {
+        id: aid.end,
+        iconStart: 'chevron-double-right',
+      },
+      {
+        id: aid.search,
+        iconStart: 'search',
+        btn: 'primary',
+      },
+      {
+        id: aid.new,
+        iconStart: 'plus-circle',
+        btn: 'success',
+      },
+    ]
+  ) || (
+    isSearch && [
+      {
+        id: aid.search,
+        iconStart: 'search',
+        btn: 'primary',
+        ...(search || {}),
+      },
+    ]
+  ) || (
+    isPassword && [
+      {
+        id: aid.view,
+        iconStart: raw ? 'eye-slash' : 'eye',
+      },
+      {
+        id: aid.password,
+        iconStart: 'key',
+      },
+    ]
+  )
   const renderValidation = () => (
     <>
       {success && <div class="valid-feedback">{success}</div>}
@@ -105,16 +166,19 @@ const FormInput = ({
     </>
   )
 
-  if (isRadio(type)) {
+  if (isCheck(type)) {
     return (
       <div class={clsx('form-check', hasValidation && 'has-validation')}>
         <input
+          ref={ref}
           id={id}
           type={type}
           checked={checked}
           disabled={disabled}
-          class={clsx(cls, 'form-check-input')}
-          onclick={handleChange} {...field} />
+          readonly={readonly}
+          class={clsx('form-check-input', withClass)}
+          onclick={onChange}
+          {...field} />
         <label class="form-check-label" for={id}>{label}</label>
         {renderValidation()}
       </div>
@@ -124,18 +188,21 @@ const FormInput = ({
   return (
     <div class={clsx((addonStart || addonEnd) && 'input-group', hasValidation && 'has-validation')}>
       {addonStart && addonStart.map(addon => (
-        <FormInputAddon key={addon.id} onClick={onAction} disabled={disabled} {...addon} />
+        <FormInputAddon key={addon.id} inputSelector={`#${id}`} onClick={onAction} disabled={disabled} {...addon} />
       ))}
       <input
+        ref={ref}
+        id={id}
         type={type}
-        class={clsx('form-control', cls)}
+        class={clsx(plain ? 'form-control-plaintext' : 'form-control', withClass)}
         autocomplete={autocomplete}
         disabled={disabled}
-        onkeydown={handleKeydown}
-        oninput={handleChange}
+        readonly={readonly}
+        onkeydown={onKeydown}
+        oninput={onChange}
         {...field} />
       {addonEnd && addonEnd.map(addon => (
-        <FormInputAddon key={addon.id} onClick={onAction} disabled={disabled} {...addon} />
+        <FormInputAddon key={addon.id} inputSelector={`#${id}`} onClick={onAction} disabled={disabled} {...addon} />
       ))}
       {renderValidation()}
     </div>
@@ -143,10 +210,7 @@ const FormInput = ({
 }
 const CrudGrid = ({
   name,
-  value: gridValue,
-  error: gridError,
-  checked: gridChecked,
-  readonly: gridReadonly,
+  state,
   processing,
   class: gridClass,
   grid: {
@@ -170,74 +234,25 @@ const CrudGrid = ({
         checked: initialChecked,
         error: initialError,
         readonly: initialReadonly,
-        class: inputClass,
-        addonStart: inputAddonStart,
-        addonEnd: inputAddonEnd,
+        raw: initialRaw,
+        type,
         success,
         placeholder,
-        type: inputType = 'text',
         disabled = null,
-        search,
         ...inputProps
       } = input
-      const id = inputId || startCase(inputId)
+      const id = inputId || `input-${name}`
       const text = label || placeholder || startCase(name)
       const hint = undefined === placeholder ? text : (placeholder || null)
-      const isCursor = typ.cursor === inputType
-      const isSearch = typ.search === inputType
-      const type = isCursor || isSearch ? 'text' : inputType
-      const error = undefined === gridError ? initialError : gridError
-      const value = undefined === gridValue ? (undefined === initialValue ? '' : initialValue) : gridValue
-      const readonly = undefined === gridReadonly ? (undefined === initialReadonly ? null : initialReadonly) : gridReadonly
-      const checked = undefined === gridChecked ? (undefined === initialChecked ? null : initialChecked) : gridChecked
-      const useClass = clsx(success && 'is-valid', error && 'is-invalid', inputClass)
-      const addonStart = inputAddonStart || (
-        isCursor && [
-          {
-            id: aid.first,
-            iconStart: 'chevron-double-left',
-          },
-          {
-            id: aid.prev,
-            iconStart: 'chevron-left',
-          },
-        ]
-      )
-      const addonEnd = inputAddonStart || (
-        isCursor && [
-          {
-            id: aid.next,
-            iconStart: 'chevron-right',
-          },
-          {
-            id: aid.end,
-            iconStart: 'chevron-double-right',
-          },
-          {
-            id: aid.search,
-            iconStart: 'search',
-            btn: 'primary',
-          },
-          {
-            id: aid.new,
-            iconStart: 'plus-circle',
-            btn: 'success',
-          },
-        ]
-      ) || (
-        isSearch && [
-          {
-            id: aid.search,
-            iconStart: 'search',
-            btn: 'primary',
-            ...(search || {}),
-          },
-        ]
-      )
+      const error = undefined === state.errors[name] ? initialError : state.errors[name]
+      const value = undefined === state.values[name] ? (undefined === initialValue ? '' : initialValue) : state.values[name]
+      const readonly = undefined === state.readonlies[name] ? (undefined === initialReadonly ? null : initialReadonly) : state.readonlies[name]
+      const checked = undefined === state.checks[name] ? (undefined === initialChecked ? null : initialChecked) : state.checks[name]
+      const raw = undefined === state.raws[name] ? (undefined === initialRaw ? null : initialRaw) : state.raws[name]
 
       return (
         <>
-          {!isRadio(type) && <label for={id} class="form-label">{text}</label>}
+          {!isCheck(type) && <label for={id} class="form-label">{text}</label>}
           <FormInput
             id={id}
             name={name}
@@ -245,8 +260,6 @@ const CrudGrid = ({
             label={text}
             placeholder={hint}
             disabled={disabled || processing}
-            addonEnd={addonEnd}
-            addonStart={addonStart}
             onChange={onChange}
             onKeydown={onKeydown}
             onAction={onAction}
@@ -255,8 +268,7 @@ const CrudGrid = ({
             value={value}
             checked={checked}
             readonly={readonly}
-            class={useClass}
-            inputType={inputType}
+            raw={raw}
             {...inputProps} />
         </>
       )
@@ -386,7 +398,8 @@ const CrudContent = ({
         actionable = true,
         postable,
         searchFields,
-      },
+        history,
+      } = {},
       data: {
         loadKey,
         cursor,
@@ -401,19 +414,22 @@ const CrudContent = ({
         values = {},
         checks = {},
         errors = {},
+        raws = {},
       } = {}
     },
     updateTab,
+    addTab,
     close: closeTab,
   },
 }) => {
   const { request } = useContext()
   const root = useRef()
-  const keys = Object.keys(grid)
+  const keys = Object.keys(grid || {})
   const keysInput = keys.filter(key => grid[key] && 'input' in grid[key])
+  const keysCheck = keysInput.filter(key => isCheck(grid[key].input.type))
   const actions = [
     ...crudActions,
-    ...(actionable ? [
+    ...(actionable && grid ? [
       {
         id: aid.save,
         btn: 'primary',
@@ -471,9 +487,12 @@ const CrudContent = ({
     const data = {}
 
     if (item) {
-      data.loadKey = pkey in item && item[pkey]
+      data.loadKey = pkey in item && item[pkey] ? item[pkey] : null
       data.values = Object.fromEntries(
         keysInput.map(key => [key, key in item ? item[key] : values[key]])
+      )
+      data.checks = Object.fromEntries(
+        keysCheck.map(key => [key, key in item && item[key] ? true : null])
       )
       data.readonlies = { ...readonlies, [pkey]: true }
       data.loaded = item
@@ -600,34 +619,27 @@ const CrudContent = ({
       notify(message, success)
     }
   }
-  const handleInputChange = ({
-    event: {
-      target: {
-        value,
-        validationMessage: error,
-      },
-    },
-    input: {
-      name,
-      type,
+  const handleInputChange = name => ({
+    target: {
+      value,
+      validationMessage: error,
     }
   }) => {
+    const isCheck = name in checks
+    const checked = !isCheck || !checks[name]
+
     update({
       clean: false,
-      values: { ...values, [name]: value },
+      values: { ...values, [name]: checked ? value : '' },
       errors: { ...errors, [name]: error },
-      checks: { ...checks, [name]: isRadio(type) ? !checks[name] : false },
+      checks: { ...checks, ...(isCheck ? { [name]: checked } : {}) },
       loaded: name === pkey ? null : loaded,
     })
   }
-  const handleInputKeydown = ({
-    event,
-    input: {
-      name,
-      inputType,
-    }
-  }) => {
-    if (typ.textarea === inputType || 'Enter' !== event.key) {
+  const handleInputKeydown = name => event => {
+    const { type } = grid[name].input
+
+    if (typ.textarea === type || 'Enter' !== event.key) {
       return
     }
 
@@ -650,7 +662,7 @@ const CrudContent = ({
       return
     }
 
-    if (typ.cursor === inputType && values[name]) {
+    if (typ.cursor === type && values[name]) {
       loadUpdate(aid.current, values[name])
 
       return
@@ -658,11 +670,16 @@ const CrudContent = ({
 
     nextElement.focus()
   }
-  const handleCursorAction = async ({ event, addon: { id, handle, ...addon }}) => {
+  const handleCursorAction = name => async (event, {
+    id,
+    handle,
+    attr,
+    ...addon
+  }) => {
     event.preventDefault()
 
     if (handle) {
-      handle(event, addon, { update, reset })
+      handle({ event, name, grid: grid[name], addon, update, reset })
 
       return
     }
@@ -689,6 +706,23 @@ const CrudContent = ({
       return
     }
 
+    if (id === aid.password) {
+      const len = attr('maxlength') || attr('minlength') || 8
+
+      update({
+        values: { ...values, [name]: random(len) },
+        errors: { ...errors, [name]: '' },
+      })
+
+      return
+    }
+
+    if (id === aid.view) {
+      update({ raws: { ...raws, [name]: !raws[name] }})
+
+      return
+    }
+
     if (!clean) {
       const { isConfirmed } = await confirm(null, {
         text: 'There are unsaved changes in form. If you leave before saving, your changes will be lost.',
@@ -703,6 +737,43 @@ const CrudContent = ({
   }
   const handleSearchClose = () => searchUpdate({ show: false })
   const handleSearchSelect = ({ item }) => assign(item)
+  const handleLoaded = () => {
+    if (loaded) {
+      addTab(aid.history, {
+        closeable: false,
+        crud: {
+          gridBase: {
+            width: 4
+          },
+          grid: {
+            creat: {
+              label: 'Created at',
+              input: {
+                plain: true,
+                value: loaded.creat,
+              },
+            },
+            updat: {
+              label: 'Updated at',
+              input: {
+                plain: true,
+                value: loaded.updat,
+              },
+            },
+            delat: {
+              label: 'Deleted at',
+              input: {
+                plain: true,
+                value: loaded.delat,
+              },
+            },
+          }
+        }
+      })
+    } else {
+
+    }
+  }
   const initialize = async () => {
     if (!dry) {
       return
@@ -710,6 +781,7 @@ const CrudContent = ({
 
     const initials = keysInput.reduce(
       (initials, key) => ({
+        ...initials,
         values: {
           ...(initials.values || {}),
           [key]: 'value' in grid[key].input ? grid[key].input.value : (
@@ -720,16 +792,17 @@ const CrudContent = ({
           ...(initials.errors || {}),
           [key]: 'error' in grid[key].input ? grid[key].input.error : '',
         },
-        checks: {
-          ...(initials.checks || {}),
-          [key]: 'checked' in grid[key].input ? grid[key].input.checked : null,
-        },
         readonlies: {
           ...(initials.readonlies || {}),
-          [key]: 'readonly' in grid[key].input ? grid[key].input.readonly : null,
+          [key]: 'readonly' in grid[key].input ? grid[key].input.readonly : false,
         },
       }),
-      {},
+      {
+        checks: keysCheck.reduce(
+          (checks, key) => ({ ...checks, [key]: 'checked' in grid[key].input ? grid[key].input.checked : false }),
+          {},
+        ),
+      },
     )
 
     update({
@@ -750,20 +823,17 @@ const CrudContent = ({
   }, [loading, cursor, loadKey])
 
   return (
-    <div ref={root} class={clsx(`g-${gutter}`)}>
+    <div ref={root} class={clsx('row', `g-${gutter}`)}>
       {keys.map(key => (
         <CrudGrid
           key={key}
           name={key}
-          error={errors[key]}
-          value={values[key]}
-          check={checks[key]}
-          readonly={readonlies[key]}
+          state={{ errors, values, checks, readonlies, raws }}
           processing={loading || processing}
           class="crud-row"
-          onKeydown={handleInputKeydown}
-          onChange={handleInputChange}
-          onAction={handleCursorAction}
+          onKeydown={handleInputKeydown(key)}
+          onChange={handleInputChange(key)}
+          onAction={handleCursorAction(key)}
           grid={{ ...gridBase, ...grid[key] }} />
       ))}
       {actions.length > 0 && (
@@ -805,10 +875,15 @@ export const aid = {
   prev: 'prev',
   save: 'save',
   search: 'search',
+  password: 'password',
+  view: 'view',
+  history: 'history',
 }
 export const typ = {
   cursor: 'cursor',
   search: 'search',
+  password: 'password',
+  text: 'text',
   radio: 'radio',
   checkbox: 'checkbox',
   textarea: 'textarea',

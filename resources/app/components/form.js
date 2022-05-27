@@ -18,15 +18,9 @@ export const useForm = (fields, onSubmit = (data, e) => null, setup = {}) => {
   const [values, valuesSet] = useState(initials.values)
   const [checks, checksSet] = useState(initials.checks)
   const handleChange = field => e => {
-    const { target: { value: newValue, type } } = e
-    const check = isCheck(type)
-    const checked = check && (field in checks) && !checks[field]
-    const value = setup && field in setup && 'change' in setup[field] ? setup[field].change(newValue, e) : (
-      check ? (checked ? newValue : '') : newValue
-    )
+    const { target: { value, type } } = e
 
-    checksSet(checks => ({ ...checks, [field]: checked }))
-    valuesSet(values => ({ ...values, [field]: value }))
+    setValue(field, value, isCheck(type))
   }
   const handleSubmit = async e => {
     e.preventDefault()
@@ -35,6 +29,15 @@ export const useForm = (fields, onSubmit = (data, e) => null, setup = {}) => {
     await onSubmit(values, e)
     processingSet(false)
   }
+  const setValue = (field, val, check) => {
+    const checked = check && (field in checks) && !checks[field]
+    const value = setup && field in setup && 'change' in setup[field] ? setup[field].change(val, e) : (
+      check ? (checked ? val : '') : val
+    )
+
+    checksSet(checks => ({ ...checks, [field]: checked }))
+    valuesSet(values => ({ ...values, [field]: value }))
+  }
 
   return {
     values,
@@ -42,6 +45,7 @@ export const useForm = (fields, onSubmit = (data, e) => null, setup = {}) => {
     errors,
     message,
     processing,
+    setValue,
     handleChange,
     handleSubmit,
     setErrors: errorsSet,

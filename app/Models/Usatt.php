@@ -12,6 +12,7 @@ class Usatt extends Model
         'ip',
         'agent',
         'payload',
+        'active',
     );
     protected $casts = array(
         'payload' => 'array',
@@ -23,10 +24,19 @@ class Usatt extends Model
         return $this->attnext && $this->attnext > now();
     }
 
-    public function increase(): bool
+    public function increase(int $max = 3, int $next = 5): bool
     {
-        $this->attleft = max(0, $this->attleft - 1);
-        $this->attnext = null;
+        $this->attleft = $this->attnext ? $max - 1 : max(0, $this->attleft - 1);
+        $this->attnext = 0 === $this->attleft ? now()->addMinutes($next) : (
+            $this->attnext && !$this->isLocked() ? null : $this->attnext
+        );
+
+        return $this->save();
+    }
+
+    public function deactivate(): bool
+    {
+        $this->active = 0;
 
         return $this->save();
     }

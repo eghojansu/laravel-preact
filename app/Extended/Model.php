@@ -2,7 +2,7 @@
 
 namespace App\Extended;
 
-use App\Extensions\AuditableTrait;
+use App\Extension\AuditableTrait;
 use Illuminate\Database\Eloquent\Model as EloquentModel;
 use Illuminate\Database\Eloquent\SoftDeletes;
 

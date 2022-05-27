@@ -9,19 +9,18 @@ export default ({ login }) => {
   const form = useForm(['username', 'password', 'remember'], data => login(
     data,
     ({ success, message, errors }) => {
-      if (!success || errors) {
-        form.setMessage(message)
-        form.setErrors(errors || [])
-      }
-
       successSet(success)
+
+      form.setValue('password', '')
+      form.setMessage(message)
+      form.setErrors(errors || [])
     },
   ))
 
   return (
     <div class="d-flex min-vh-100 justify-content-center align-items-center">
       <form class="form-login text-center" method="post" onsubmit={form.handleSubmit}>
-        <h1 class="h3 mb-3 fw-normal">Please Sign In</h1>
+        <h1 class="h3 mb-3 fw-normal">Please sign in</h1>
 
         {form.processing && <ProgressAlert />}
         {form.message && <Alert message={form.message} alert={success ? 'success' : 'danger'} />}

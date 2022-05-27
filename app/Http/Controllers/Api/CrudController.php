@@ -55,7 +55,12 @@ abstract class CrudController extends Controller
 
     protected function createCrud(): Crud
     {
-        return new Crud($this->getModelClass(), $this->getModelKey());
+        return new Crud(
+            $this->getModelClass(),
+            $this->getModelKey(),
+            Crud::DEFAULT_SIZE,
+            $this->getFilter(),
+        );
     }
 
     protected function getData(Model $model = null): array
@@ -68,6 +73,11 @@ abstract class CrudController extends Controller
     protected function getValidation(Model $model = null): array
     {
         return array();
+    }
+
+    protected function getFilter(): \Closure
+    {
+        return static fn () => null;
     }
 
     protected function getModelKey(): string

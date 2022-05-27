@@ -20,6 +20,7 @@ return new class extends Migration
             $table->smallInteger('attleft');
             $table->dateTime('attnext')->nullable();
             $table->recordable();
+            $table->activable();
             $table->auditable();
         });
     }

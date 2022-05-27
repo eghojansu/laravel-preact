@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Extensions;
+namespace App\Extension;
 
 use App\Models\User;
 use App\Service\Auditable;

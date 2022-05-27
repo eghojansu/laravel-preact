@@ -6,6 +6,7 @@ export default () => {
       pkey="userid"
       title="Users"
       resource="/api/adm/user"
+      history={true}
       gridBase={{
         width: 4,
         wrap: true,
@@ -22,10 +23,36 @@ export default () => {
           }
         },
         name: {
+          wrap: false,
           input: {
             required: true,
             minlength: 3,
             maxlength: 64,
+          }
+        },
+        email: {
+          input: {
+            type: 'email',
+          }
+        },
+        password: {
+          wrap: false,
+          input: {
+            type: 'password',
+            minlength: 5,
+            maxlength: 8,
+          }
+        },
+        joindt: {
+          label: 'Join Date',
+          input: {
+            plain: true,
+          }
+        },
+        active: {
+          input: {
+            type: 'checkbox',
+            value: 1,
           }
         },
       }} />

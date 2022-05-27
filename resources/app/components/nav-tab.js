@@ -56,7 +56,7 @@ export const useTab = baseTabs => {
       ),
     )
   }
-  const cloneTab = (id, baseTab, data = {}, override = {}) => {
+  const addTab = (id, baseTab = {}, data = {}) => {
     const tab = tabs.find(matchTab(id))
     const defaults = {
       closeable: true,
@@ -65,10 +65,9 @@ export const useTab = baseTabs => {
     if (tab) {
       activate(tab)
     } else {
-      tabsSet(tabs => [...tabs.map(tab => ({ ...tab, active: false })), {
-        ...baseTab,
+      tabsSet(tabs => [...tabs.map(tab => ({ ...tab, active: baseTab.active ? false : tab.active })), {
         ...defaults,
-        ...override,
+        ...baseTab,
         id,
         data: { ...(baseTab.data || {}), ...data },
       }])
@@ -91,7 +90,7 @@ export const useTab = baseTabs => {
     event?.preventDefault()
     event?.stopPropagation()
 
-    close(tab)
+    close(tab.id)
   }
 
   return {
@@ -99,7 +98,7 @@ export const useTab = baseTabs => {
     activeTab,
     activate,
     close,
-    cloneTab,
+    addTab,
     updateTab,
     onSelect,
     onClose,

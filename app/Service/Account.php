@@ -57,38 +57,39 @@ class Account
         }
 
         $request = request();
-
-        /** @var Usatt|null */
-        $attempt = $user->attempts()->where(function (Builder $query) use ($request) {
-            $query->where('ip', $request->ip());
-            $query->where('agent', $request->userAgent());
-        })->first();
+        $attempt = $user->getActiveAttempt($request->ip(), $request->userAgent());
 
         if ($attempt?->isLocked()) {
             return $this->api->fail(
-                trans('account.locked') . '. ' .
-                trans('account.attempt_next', array('at' => $attempt->attnext->format('D, d M Y H:i:s')))
+                sprintf(
+                    '%s (%s)',
+                    trans('account.locked'),
+                    trans('account.attempt_next', array('at' => $attempt->attnext->format('D, d M Y H:i:s'))),
+                ),
             );
         }
 
         if (!Hash::check($password, $user->getAuthPassword())) {
             if (!$attempt) {
-                $attempt = new Usatt(array(
-                    'attleft' => $this->preference->maxAttempt,
-                    'ip' => $request->ip(),
-                    'agent' => $request->userAgent(),
-                ));
-
-                $user->attempts()->save($attempt);
+                $attempt = $user->newAttempt(
+                    $this->preference->attMax,
+                    $request->ip(),
+                    $request->userAgent(),
+                );
             }
 
-            $attempt->increase();
+            $attempt->increase($this->preference->attMax, $this->preference->attTo);
 
             return $this->api->fail(
-                trans('account.invalid') . '. ' .
-                trans('account.attempt', array('left' => $attempt->attleft))
+                sprintf(
+                    '%s (%s)',
+                    trans('account.invalid'),
+                    trans('account.attempt', array('left' => $attempt->attleft)),
+                ),
             );
         }
+
+        $attempt?->deactivate();
 
         if (!$user->active) {
             return $this->api->fail('account.inactive');
@@ -97,6 +98,6 @@ class Account
         Auth::login($user, $remember);
         $this->record('login');
 
-        return $this->api->ok('account.welcome');
+        return $this->api->ok('account.welcome', $user->publish());
     }
 }
